@@ -18,10 +18,12 @@ const userSchema = new Schema({
         type: String,
         default: 'I am new!'
     },
-    posts: {
-        type: Schema.Types.ObjectId,
-        ref: 'Post'
-    }
+    posts: [
+        {
+            type: Schema.Types.ObjectId,
+            ref: 'Post'
+        }
+    ]
     //automatically adds createdAt and updatedAt timestamps, out of the box
 });
 
