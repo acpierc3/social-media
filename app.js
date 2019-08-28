@@ -8,6 +8,7 @@ const multer = require('multer');
 
 const PRIVATE = require('./util/database.priv.js');
 const feedRoutes = require('./routes/feed');
+const authRoutes = require('./routes/auth');
 
 const app = express();
 
@@ -44,12 +45,15 @@ app.use((req, res, next) => {
 });
 
 app.use('/feed', feedRoutes);
+app.use('/auth', authRoutes);
 
 app.use((error, req, res, next) => {
     console.log(error);
     const status = error.statusCode || 500;
+    const data = error.data;
     res.status(status).json({
-        message: error.message
+        message: error.message,
+        data: data
     })
 })
 
@@ -58,4 +62,3 @@ mongoose.connect(MONGODB_URI)
         app.listen(8080);
     })
     .catch(err => console.log(err));
-    
