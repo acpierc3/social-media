@@ -120,6 +120,11 @@ exports.updatePost = (req, res, next) => {
         error.statusCode = 404;
         throw error;
       }
+      if(post.creator.toString() !== req.userId.toString()) {
+        const error = new Error('Not Authorized');
+        error.statusCode = 403;
+        throw error;
+      }
       //if the new image url is different, delete the old one
       if(imageUrl !== post.imageUrl) {
         console.log('DELETING OLD IMAGE')
@@ -144,15 +149,16 @@ exports.updatePost = (req, res, next) => {
 exports.deletePost = (req, res, next) => {
   Post.findById(req.params.postId)
     .then(post => {
-
-      //need to check logged in user
-
       if(!post) {
         const error = new Error('Could not find post');
         error.statusCode = 404;
         throw error;
       }
-
+      if(post.creator.toString() !== req.userId.toString()) {
+        const error = new Error('Not Authorized');
+        error.statusCode = 403;
+        throw error;
+      }
       clearImage(post.imageUrl);
       return Post.findByIdAndRemove(req.params.postId);
     })
