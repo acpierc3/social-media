@@ -164,9 +164,10 @@ exports.deletePost = (req, res, next) => {
       return User.findById(req.userId);
     })
     .then(user => {
-      user.posts = user.posts.filter(post => {
-        return post.toString() !== req.params.postId.toString()
-      });
+      // user.posts = user.posts.filter(post => {
+      //   return post.toString() !== req.params.postId.toString()
+      // });
+      user.posts.pull(req.params.postId);
       return user.save();
     })
     .then(result => {
@@ -180,7 +181,57 @@ exports.deletePost = (req, res, next) => {
     })
 }
 
+exports.getStatus = (req, res, next) => {
+  User.findById(req.userId)
+    .then(user => {
+      if(!user) {
+        const error = new Error('Could not find user');
+        error.statusCode = 404;
+        throw error;
+      }
+      res.status(200).json({message: 'Status fetched', status: user.status})
+    })
+    .catch(err => {
+      if(!err.statusCode) {
+        err.statusCode = 500;
+      }
+      next(err);
+    })
+}
+
+exports.updateStatus = (req, res, next) => {
+  const errors = validationResult(req);
+  if(!errors.isEmpty()) {
+    const error = new Error('Validation failed, entered data is incorrect');
+    error.statusCode = 422;
+    throw error;
+  }
+  User.findById(req.userId)
+    .then(user => {
+      if(!user) {
+        const error = new Error('Could not find user');
+        error.statusCode = 404;
+        throw error;
+      }
+      user.status = req.body.status;
+      return user.save();
+    })
+    .then(result => {
+      res.status(200).json({message: 'Status updated'})
+    })
+    .catch(err => {
+      if(!err.statusCode) {
+        err.statusCode = 500;
+      }
+      next(err);
+    })
+}
+
 const clearImage = filePath => {
   filePath = path.join(__dirname, '..', filePath);
-  fs.unlink(filePath, err => console.log(err));
+  fs.unlink(filePath, err => {
+    if(err) {
+      console.log("ERROR: ", err);
+    }
+  });
 }

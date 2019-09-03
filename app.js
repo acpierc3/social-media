@@ -48,7 +48,7 @@ app.use('/feed', feedRoutes);
 app.use('/auth', authRoutes);
 
 app.use((error, req, res, next) => {
-    console.log(error);
+    console.log("ERROR HANDLER: ",error);
     const status = error.statusCode || 500;
     const data = error.data;
     res.status(status).json({
@@ -57,7 +57,7 @@ app.use((error, req, res, next) => {
     })
 })
 
-mongoose.connect(MONGODB_URI)
+mongoose.connect(MONGODB_URI, { useNewUrlParser: true, useFindAndModify: false })
     .then(result => {
         app.listen(8080);
     })
