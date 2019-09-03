@@ -105,7 +105,6 @@ exports.updatePost = (req, res, next) => {
   }
   let imageUrl = req.body.image;
   if(req.file) {
-    console.log('NEW IMAGE DETECTED');
     imageUrl = req.file.path.replace("\\", "/");
   }
   if(!imageUrl) {
@@ -127,7 +126,6 @@ exports.updatePost = (req, res, next) => {
       }
       //if the new image url is different, delete the old one
       if(imageUrl !== post.imageUrl) {
-        console.log('DELETING OLD IMAGE')
         clearImage(post.imageUrl);
       }
       post.title = req.body.title;
@@ -161,6 +159,15 @@ exports.deletePost = (req, res, next) => {
       }
       clearImage(post.imageUrl);
       return Post.findByIdAndRemove(req.params.postId);
+    })
+    .then(result => {
+      return User.findById(req.userId);
+    })
+    .then(user => {
+      user.posts = user.posts.filter(post => {
+        return post.toString() !== req.params.postId.toString()
+      });
+      return user.save();
     })
     .then(result => {
       res.status(200).json({message: "Post deleted"});
