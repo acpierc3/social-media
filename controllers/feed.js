@@ -3,6 +3,7 @@ const path = require('path');
 
 const {validationResult} = require('express-validator');
 
+const io = require('../socket');
 const Post = require('../models/post');
 const User = require('../models/user');
 
@@ -12,6 +13,7 @@ exports.getPosts = async (req, res, next) => {
   try{
     const totalItems = await Post.find().countDocuments();
     const posts = await Post.find()
+        .populate('creator')
         .skip((currentPage - 1) * perPage)
         .limit(perPage);
     res.status(200).json({posts: posts, totalItems: totalItems});
@@ -50,6 +52,9 @@ exports.createPost = async (req, res, next) => {
     const user = await User.findById(req.userId);
     user.posts.push(post);
     await user.save();
+    //after we are done creating post, inform other clients about the new post via web sockets
+    //emit() automatically converts object to JSON
+    io.getIO().emit('posts', {action: 'create', post: {...post._doc, creator: {_id: req.userId, name: user.name}}})
     res.status(201).json({
       message: 'Post created successfully!',
       post: post,
@@ -67,7 +72,7 @@ exports.createPost = async (req, res, next) => {
 exports.getPost = async (req, res, next) => {
   const postId = req.params.postId;
   try {
-    const post = await Post.findById(postId);
+    const post = await Post.findById(postId.populate('creator'));
     if(!post) {
       const error = new Error('Could not find post');
       error.statusCode = 404;
@@ -156,50 +161,46 @@ exports.deletePost = async (req, res, next) => {
   }
 }
 
-exports.getStatus = (req, res, next) => {
-  User.findById(req.userId)
-    .then(user => {
-      if(!user) {
-        const error = new Error('Could not find user');
-        error.statusCode = 404;
-        throw error;
-      }
-      res.status(200).json({message: 'Status fetched', status: user.status})
-    })
-    .catch(err => {
-      if(!err.statusCode) {
-        err.statusCode = 500;
-      }
-      next(err);
-    })
+exports.getStatus = async (req, res, next) => {
+  try {
+    const user = await User.findById(req.userId);
+    if(!user) {
+      const error = new Error('Could not find user');
+      error.statusCode = 404;
+      throw error;
+    }
+    res.status(200).json({message: 'Status fetched', status: user.status})
+  } catch(err) {
+    if(!err.statusCode) {
+      err.statusCode = 500;
+    }
+    next(err);
+  }
 }
 
-exports.updateStatus = (req, res, next) => {
+exports.updateStatus = async (req, res, next) => {
   const errors = validationResult(req);
   if(!errors.isEmpty()) {
     const error = new Error('Validation failed, entered data is incorrect');
     error.statusCode = 422;
     throw error;
   }
-  User.findById(req.userId)
-    .then(user => {
-      if(!user) {
-        const error = new Error('Could not find user');
-        error.statusCode = 404;
-        throw error;
-      }
-      user.status = req.body.status;
-      return user.save();
-    })
-    .then(result => {
-      res.status(200).json({message: 'Status updated'})
-    })
-    .catch(err => {
-      if(!err.statusCode) {
-        err.statusCode = 500;
-      }
-      next(err);
-    })
+  try {
+    const user = await User.findById(req.userId);
+    if(!user) {
+      const error = new Error('Could not find user');
+      error.statusCode = 404;
+      throw error;
+    }
+    user.status = req.body.status;
+    await user.save();
+    res.status(200).json({message: 'Status updated'})
+  } catch(err) {
+    if(!err.statusCode) {
+      err.statusCode = 500;
+    }
+    next(err);
+  }
 }
 
 const clearImage = filePath => {
