@@ -5,14 +5,16 @@ const bodyParser = require('body-parser');
 const mongoose = require('mongoose');
 const uuidv4 = require('uuid/v4');
 const multer = require('multer');
+const graphqlHttp = require('express-graphql');
 
 const PRIVATE = require('./util/database.priv.js');
-const feedRoutes = require('./routes/feed');
-const authRoutes = require('./routes/auth');
+const MONGODB_URI = 'mongodb+srv://node:' +PRIVATE.MONGO_PASSWORD +'@online-shop-dkmzb.mongodb.net/messages?w=majority';
+
+const graphqlSchema = require('./graphql/schema');
+const graphqlResolver = require('./graphql/resolvers');
 
 const app = express();
 
-const MONGODB_URI = 'mongodb+srv://node:' +PRIVATE.MONGO_PASSWORD +'@online-shop-dkmzb.mongodb.net/messages?w=majority';
 
 const storage = multer.diskStorage({
     destination: function(req, file, cb) {
@@ -44,8 +46,11 @@ app.use((req, res, next) => {
     next();
 });
 
-app.use('/feed', feedRoutes);
-app.use('/auth', authRoutes);
+app.use('/graphql', graphqlHttp({
+    schema: graphqlSchema,
+    rootValue: graphqlResolver,
+    graphiql: true
+}));
 
 app.use((error, req, res, next) => {
     console.log("ERROR HANDLER: ",error);
@@ -59,10 +64,6 @@ app.use((error, req, res, next) => {
 
 mongoose.connect(MONGODB_URI, { useNewUrlParser: true, useFindAndModify: false })
     .then(result => {
-        const server = app.listen(8080);
-        const io = require('./socket').init(server);
-        io.on('connection', socket => {
-            console.log('Client connected');
-        });
+        app.listen(8080);
     })
     .catch(err => console.log(err));
