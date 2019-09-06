@@ -75,11 +75,11 @@ module.exports = {
     createPost: async function({ postInput }, req) {
         const errors = [];
 
-        if(validator.isEmpty(postInput.title) || !validator.isLength(postInput.title), {min: 5}) {
-            errors.push({message: 'Title is invalid.'});
+        if(validator.isEmpty(postInput.title) || !validator.isLength(postInput.title, {min: 5})) {
+            errors.push({message: 'Title is invalid!'});
         }
-        if(validator.isEmpty(postInput.content) || !validator.isLength(postInput.content), {min: 5}) {
-            errors.push({message: 'Content is invalid.'});
+        if(validator.isEmpty(postInput.content) || !validator.isLength(postInput.content, {min: 5})) {
+            errors.push({message: 'Content is invalid!'});
         }
         if(errors.length > 0) {
             const error = new Error('Invalid input');
@@ -92,13 +92,13 @@ module.exports = {
             content: postInput.content,
             imageUrl: postInput.imageUrl
         });
-        const post = await post.save();
+        const createdPost = await post.save();
         //add post to user's posts
         return {
-            ...post._doc, 
-            _id: post._id.toString(),
-            createdAt: post.createdAt.toISOString(),
-            updatedAt: post.updatedAt.toISOString()
+            ...createdPost._doc, 
+            _id: createdPost._id.toString(),
+            createdAt: createdPost.createdAt.toISOString(),
+            updatedAt: createdPost.updatedAt.toISOString()
         };
     }
 };
