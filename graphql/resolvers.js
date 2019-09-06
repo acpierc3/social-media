@@ -113,5 +113,34 @@ module.exports = {
             createdAt: createdPost.createdAt.toISOString(),
             updatedAt: createdPost.updatedAt.toISOString()
         };
+    },
+
+    posts: async function({ page }, req) {
+        if(!req.isAuth) {
+            const error = new Error('Not authenticated!');
+            error.code = 401;
+            throw error;
+        }
+        const currentPage = page || 1;
+        const perPage = 2;
+        const totalPosts = await Post.find().countDocuments();
+        const posts = await Post.find()
+            //only populates name field of the creator, so password isnt included
+            .populate('creator', 'name')
+            .sort({createdAt: -1})
+            .skip((currentPage - 1) * perPage)
+            .limit(perPage);
+        console.log(posts);
+        return{
+            posts: posts.map(post => {
+               return {
+                    ...post._doc,
+                    _id: post._id.toString(),
+                    createdAt: post.createdAt.toISOString(),
+                    updatedAt: post.updatedAt.toISOString()
+               } 
+            }), 
+            totalPosts: totalPosts
+        };
     }
 };
