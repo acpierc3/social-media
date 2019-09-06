@@ -3,6 +3,7 @@ const validator = require('validator');
 const jwt = require('jsonwebtoken');
 
 const User = require('../models/user');
+const Post = require('../models/post');
 
 const PRIVATE = require('../util/database.priv.js');
 
@@ -86,5 +87,18 @@ module.exports = {
             error.code = 422;
             throw error;
         }
+        const post = new Post({
+            title: postInput.title,
+            content: postInput.content,
+            imageUrl: postInput.imageUrl
+        });
+        const post = await post.save();
+        //add post to user's posts
+        return {
+            ...post._doc, 
+            _id: post._id.toString(),
+            createdAt: post.createdAt.toISOString(),
+            updatedAt: post.updatedAt.toISOString()
+        };
     }
 };
