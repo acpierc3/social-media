@@ -12,6 +12,7 @@ const MONGODB_URI = 'mongodb+srv://node:' +PRIVATE.MONGO_PASSWORD +'@online-shop
 
 const graphqlSchema = require('./graphql/schema');
 const graphqlResolver = require('./graphql/resolvers');
+const auth = require('./middleware/auth');
 
 const app = express();
 
@@ -50,6 +51,11 @@ app.use((req, res, next) => {
     }
     next();
 });
+
+//middleware to check every request for auth, however if user is not
+//authenticated, request will not be denied, but resolver will decide whether
+//or not to continue
+app.use(auth);
 
 app.use('/graphql', graphqlHttp({
     schema: graphqlSchema,
