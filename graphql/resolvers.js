@@ -145,11 +145,11 @@ module.exports = {
 
     post: async function({ id }, req) {
 
-        // if(!req.isAuth) {
-        //     const error = new Error('Not authenticated!');
-        //     error.code = 401;
-        //     throw error;
-        // }
+        if(!req.isAuth) {
+            const error = new Error('Not authenticated!');
+            error.code = 401;
+            throw error;
+        }
         const post = await Post.findById(id).populate('creator', 'name');
         if(!post) {
             const error = new Error('Could not find post');
