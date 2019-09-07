@@ -130,7 +130,6 @@ module.exports = {
             .sort({createdAt: -1})
             .skip((currentPage - 1) * perPage)
             .limit(perPage);
-        console.log(posts);
         return{
             posts: posts.map(post => {
                return {

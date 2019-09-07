@@ -1,4 +1,5 @@
 const path = require('path');
+const fs = require('fs');
 
 const express = require('express');
 const bodyParser = require('body-parser');
@@ -57,6 +58,23 @@ app.use((req, res, next) => {
 //or not to continue
 app.use(auth);
 
+
+app.put('/post-image', (req, res, next) => {
+    if(!req.isAuth) {
+        const error = new Error('Not authenticated!');
+        error.code = 401;
+        throw error;
+    }
+    //make sure that multer has added image to the req object
+    if (!req.file) {
+        return res.status(200).json({message: 'No file provided'})
+    }
+    if(req.body.oldPath) {
+        clearImage(req.body.oldPath);
+    }
+    return res.status(201).json({filePath: req.file.path})
+});
+
 app.use('/graphql', graphqlHttp({
     schema: graphqlSchema,
     rootValue: graphqlResolver,
@@ -87,3 +105,12 @@ mongoose.connect(MONGODB_URI, { useNewUrlParser: true, useFindAndModify: false }
         app.listen(8080);
     })
     .catch(err => console.log(err));
+
+const clearImage = filePath => {
+    filePath = path.join(__dirname, '..', filePath);
+    fs.unlink(filePath, err => {
+        if(err) {
+            console.log(err);
+        }
+    })
+}
