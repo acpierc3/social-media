@@ -107,7 +107,7 @@ mongoose.connect(MONGODB_URI, { useNewUrlParser: true, useFindAndModify: false }
     .catch(err => console.log(err));
 
 const clearImage = filePath => {
-    filePath = path.join(__dirname, '..', filePath);
+    filePath = path.join(__dirname, '.', filePath);
     fs.unlink(filePath, err => {
         if(err) {
             console.log(err);

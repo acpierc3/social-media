@@ -211,10 +211,10 @@ module.exports = {
             error.statusCode = 403;
             throw error;
         }
-        //if the new image url is different, delete the old one
-        if(imageUrl !== post.imageUrl) {
-            clearImage(post.imageUrl);
-        }
+        // //if the new image url is different, delete the old one
+        // if(imageUrl !== post.imageUrl) {
+        //     clearImage(post.imageUrl);
+        // }
         post.title = postInput.title;
         if (postInput.imageUrl !== 'undefined') {
             post.imageUrl = imageUrl;
