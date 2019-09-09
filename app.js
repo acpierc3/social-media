@@ -14,6 +14,7 @@ const MONGODB_URI = 'mongodb+srv://node:' +PRIVATE.MONGO_PASSWORD +'@online-shop
 const graphqlSchema = require('./graphql/schema');
 const graphqlResolver = require('./graphql/resolvers');
 const auth = require('./middleware/auth');
+const {clearImage} = require('./util/file');
 
 const app = express();
 
@@ -105,12 +106,3 @@ mongoose.connect(MONGODB_URI, { useNewUrlParser: true, useFindAndModify: false }
         app.listen(8080);
     })
     .catch(err => console.log(err));
-
-const clearImage = filePath => {
-    filePath = path.join(__dirname, '.', filePath);
-    fs.unlink(filePath, err => {
-        if(err) {
-            console.log(err);
-        }
-    })
-}
