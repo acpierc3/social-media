@@ -255,5 +255,54 @@ module.exports = {
         user.posts.pull(id);
         await user.save();
         return true;
+    },
+
+    user: async function(args, req) {
+        if(!req.isAuth) {
+            const error = new Error('Not authenticated!');
+            error.code = 401;
+            throw error;
+        }
+        const user = await User.findById(req.userId);
+        if (!user) {
+            const error = new Error('User not found');
+            error.code = 404;
+            throw error;
+        }
+        return {
+            ...user._doc,
+            _id: user._id.toString()
+        }
+    },
+
+    updateStatus: async function({status}, req) {
+        if(!req.isAuth) {
+            const error = new Error('Not authenticated!');
+            error.code = 401;
+            throw error;
+        }
+        const errors = [];
+
+        if(validator.isEmpty(status) || !validator.isLength(status, {min: 5})) {
+            errors.push({message: 'Status is invalid!'});
+        }
+        if(errors.length > 0) {
+            const error = new Error('Invalid input');
+            error.data = errors;
+            error.code = 422;
+            throw error;
+        }
+        const user = await User.findById(req.userId);
+        if(!user) {
+            const error = new Error('Could not find user');
+            error.statusCode = 404;
+            throw error;
+          }
+        user.status = status;
+        const updatedUser = await user.save();
+        return {
+            ...updatedUser._doc,
+            _id: updatedUser._id.toString()
+        }
     }
 };
