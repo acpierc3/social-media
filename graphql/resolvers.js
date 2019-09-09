@@ -162,6 +162,72 @@ module.exports = {
             createdAt: post.createdAt.toISOString(),
             updatedAt: post.updatedAt.toISOString()
         }
+    },
 
+    updatePost: async function({ id, postInput }, req) {
+        if(!req.isAuth) {
+            const error = new Error('Not authenticated!');
+            error.code = 401;
+            throw error;
+        }
+        const errors = [];
+
+        if(validator.isEmpty(postInput.title) || !validator.isLength(postInput.title, {min: 5})) {
+            errors.push({message: 'Title is invalid!'});
+        }
+        if(validator.isEmpty(postInput.content) || !validator.isLength(postInput.content, {min: 5})) {
+            errors.push({message: 'Content is invalid!'});
+        }
+        // let imageUrl = req.body.image;
+        // if(req.file) {
+        //     imageUrl = req.file.path.replace("\\", "/");
+        // }
+        // if(!imageUrl) {
+        //     const error = new Error('No image picked.');
+        //     error.statusCode = 422;
+        //     throw error;
+        // }
+        if(errors.length > 0) {
+            const error = new Error('Invalid input');
+            error.data = errors;
+            error.code = 422;
+            throw error;
+        }
+        const user = await User.findById(req.userId);
+        if(!user){
+            const error = new Error('Invaid user!');
+            error.code = 401;
+            throw error;
+        }
+        
+        const post = await Post.findById(id).populate('creator');
+        if(!post) {
+            const error = new Error('Could not find post');
+            error.statusCode = 404;
+            throw error;
+        }
+        if(post.creator._id.toString() !== req.userId.toString()) {
+            const error = new Error('Not Authorized');
+            error.statusCode = 403;
+            throw error;
+        }
+        //if the new image url is different, delete the old one
+        if(imageUrl !== post.imageUrl) {
+            clearImage(post.imageUrl);
+        }
+        post.title = postInput.title;
+        if (postInput.imageUrl !== 'undefined') {
+            post.imageUrl = imageUrl;
+        }
+        post.content = postInput.content;
+        const createdPost = await post.save();
+        user.posts.push(createdPost);
+        await user.save();
+        return {
+            ...createdPost._doc, 
+            _id: createdPost._id.toString(),
+            createdAt: createdPost.createdAt.toISOString(),
+            updatedAt: createdPost.updatedAt.toISOString()
+        };
     }
 };
